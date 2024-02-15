@@ -41,7 +41,6 @@ const App = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 4,
         textAlign: 'center',
         height: '100vh',
         width:"100vw",
