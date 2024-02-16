@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, IconButton, CircularProgress, TextField } from '@mui/material';
+import { Box, Typography, IconButton, CircularProgress } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import axios from 'axios';
 
@@ -8,7 +8,6 @@ const App = () => {
   const [prediction, setPrediction] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [apiLink, setApiLink] = useState('https://69e0-34-86-102-235.ngrok-free.app/predict'); // default link
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -22,7 +21,7 @@ const App = () => {
       formData.append('file', file);
 
       const response = await axios.post(
-        apiLink,
+        'https://7902-34-148-231-189.ngrok-free.app/predict',
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -35,10 +34,6 @@ const App = () => {
     }
   };
 
-  const handleApiLinkChange = (event) => {
-    setApiLink(event.target.value);
-  };
-
   return (
     <Box
       sx={{
@@ -48,22 +43,13 @@ const App = () => {
         justifyContent: 'center',
         textAlign: 'center',
         height: '100vh',
-        width: '100vw',
+        width:"100vw",
         backgroundColor: '#282c34',
       }}
     >
       <Typography variant="h4" color="white" mb={2}>
         Image Classification
       </Typography>
-
-      <TextField
-        label="API Link"
-        variant="outlined"
-        fullWidth
-        value={apiLink}
-        onChange={handleApiLinkChange}
-        style={{ marginBottom: '20px' }}
-      />
 
       <input
         accept="image/*"
@@ -85,9 +71,9 @@ const App = () => {
           alt="Selected"
           style={{
             marginTop: '20px',
-            width: '300px',
-            height: '300px',
-            objectFit: 'cover',
+            width: '300px', // Fixed width
+            height: '300px', // Fixed height
+            objectFit: 'cover', // Ensure the image covers the container
             borderRadius: '8px',
           }}
         />
