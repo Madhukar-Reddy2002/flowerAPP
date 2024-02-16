@@ -8,7 +8,7 @@ const App = () => {
   const [prediction, setPrediction] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [apiLink, setApiLink] = useState('https://69e0-34-86-102-235.ngrok-free.app//predict'); // default link
+  const [apiLink, setApiLink] = useState('https://69e0-34-86-102-235.ngrok-free.app/predict'); // default link
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
