@@ -21,7 +21,7 @@ const App = () => {
       formData.append('file', file);
 
       const response = await axios.post(
-        'https://7447-34-134-237-137.ngrok-free.app/predict',
+        'https://e335-2409-40d1-a-a760-24d4-9e65-bfef-3577.ngrok-free.app/predict',
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
