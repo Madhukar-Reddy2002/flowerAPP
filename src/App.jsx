@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import { Box, Typography, IconButton, CircularProgress } from '@mui/material';
+import React, { useState, useRef } from 'react';
+import {
+  Box,
+  Typography,
+  IconButton,
+  CircularProgress,
+  Button,
+} from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import axios from 'axios';
 
@@ -8,6 +14,8 @@ const App = () => {
   const [prediction, setPrediction] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -21,7 +29,7 @@ const App = () => {
       formData.append('file', file);
 
       const response = await axios.post(
-        'https://89ea-103-246-171-136.ngrok-free.app/predict',
+        "https://426a-103-246-171-254.ngrok-free.app/predict",
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -34,6 +42,37 @@ const App = () => {
     }
   };
 
+  const handleCapturePhoto = () => {
+    const videoElement = videoRef.current;
+
+    // Access the device camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        videoElement.srcObject = stream;
+      })
+      .catch((error) => {
+        console.error('Error accessing camera:', error);
+      });
+  };
+
+  const handleCaptureSnapshot = () => {
+    const videoElement = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    const snapshot = canvas.toDataURL('image/jpeg');
+    
+    setPreviewUrl(snapshot);
+    setSelectedFile(null);
+
+    // Stop the video stream
+    const stream = videoElement.srcObject;
+    const tracks = stream.getTracks();
+    tracks.forEach((track) => track.stop());
+  };
+
   return (
     <Box
       sx={{
@@ -41,11 +80,11 @@ const App = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 4,
         textAlign: 'center',
         height: '100vh',
-        width:"100vw",
+        width: '100vw',
         backgroundColor: '#282c34',
+        overflow: 'hidden',
       }}
     >
       <Typography variant="h4" color="white" mb={2}>
@@ -58,6 +97,7 @@ const App = () => {
         type="file"
         onChange={handleFileChange}
         style={{ display: 'none' }}
+        ref={fileInputRef}
       />
 
       <label htmlFor="contained-button-file">
@@ -65,6 +105,24 @@ const App = () => {
           <PhotoCamera sx={{ fontSize: 30 }} />
         </IconButton>
       </label>
+
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleCapturePhoto}
+        style={{ marginTop: '20px' }}
+      >
+        Start Camera
+      </Button>
+
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleCaptureSnapshot}
+        style={{ marginTop: '20px' }}
+      >
+        Capture Photo
+      </Button>
 
       {previewUrl && (
         <img
@@ -91,6 +149,14 @@ const App = () => {
           </Typography>
         </div>
       )}
+
+      <video
+        ref={videoRef}
+        style={{ display: 'none' }}
+        autoPlay
+        playsInline
+        muted
+      ></video>
     </Box>
   );
 };
