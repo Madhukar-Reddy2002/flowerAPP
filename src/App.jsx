@@ -5,6 +5,8 @@ import {
   IconButton,
   CircularProgress,
   Button,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import axios from 'axios';
@@ -14,6 +16,7 @@ const App = () => {
   const [prediction, setPrediction] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [cameraMode, setCameraMode] = useState('user');
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -29,7 +32,7 @@ const App = () => {
       formData.append('file', file);
 
       const response = await axios.post(
-        'https://426a-103-246-171-254.ngrok-free.app/predict',
+        'https://d9fa-103-246-171-254.ngrok-free.app/predict',
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -45,8 +48,8 @@ const App = () => {
   const handleCapturePhoto = () => {
     const videoElement = videoRef.current;
 
-    // Access the device camera
-    navigator.mediaDevices.getUserMedia({ video: true })
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: cameraMode } })
       .then((stream) => {
         videoElement.srcObject = stream;
       })
@@ -55,7 +58,21 @@ const App = () => {
       });
   };
 
-  const handleCaptureSnapshot = () => {
+  const dataURLtoFile = (dataURL, fileName) => {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+  
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+  
+    return new File([u8arr], fileName, { type: mime });
+  };
+
+  const handleCaptureSnapshot = async () => {
     const videoElement = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width = videoElement.videoWidth;
@@ -63,16 +80,42 @@ const App = () => {
     const context = canvas.getContext('2d');
     context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
     const snapshot = canvas.toDataURL('image/jpeg');
-    
+  
     setPreviewUrl(snapshot);
     setSelectedFile(null);
+  
+    // Check if srcObject is not null before trying to access tracks
+    if (videoElement.srcObject !== null) {
+      const stream = videoElement.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+    }
+  
+    videoElement.srcObject = null;
+  
+    try {
+      setLoading(true);
+  
+      const formData = new FormData();
+      formData.append('file', dataURLtoFile(snapshot, 'captured.jpg'));
+  
+      const response = await axios.post(
+        'https://d9fa-103-246-171-254.ngrok-free.app/predict',
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+  
+      setPrediction(response.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };  
 
-    // Stop the video stream
-    const stream = videoElement.srcObject;
-    const tracks = stream.getTracks();
-    tracks.forEach((track) => track.stop());
+  const handleCameraModeChange = (event) => {
+    setCameraMode(event.target.value);
   };
-
   return (
     <Box
       sx={{
@@ -84,7 +127,7 @@ const App = () => {
         height: '100vh',
         width: '100vw',
         backgroundColor: '#282c34',
-        overflow: 'hidden',
+        overflow: 'auto',
       }}
     >
       <Typography variant="h4" color="white" mb={2}>
@@ -115,6 +158,28 @@ const App = () => {
         Start Camera
       </Button>
 
+      <Select
+        value={cameraMode}
+        onChange={handleCameraModeChange}
+        style={{ marginTop: '10px', color: 'white' }}
+      >
+        <MenuItem value="user">Front Camera</MenuItem>
+        <MenuItem value="environment">Back Camera</MenuItem>
+      </Select>
+
+      {previewUrl && (
+        <img
+          src={previewUrl}
+          alt="Selected"
+          style={{
+            marginTop: '20px',
+            width: '300px',
+            height: '300px',
+            objectFit: 'cover',
+            borderRadius: '8px',
+          }}
+        />
+      )}
       <Button
         variant="contained"
         color="primary"
@@ -123,20 +188,6 @@ const App = () => {
       >
         Capture Photo
       </Button>
-
-      {previewUrl && (
-        <img
-          src={previewUrl}
-          alt="Selected"
-          style={{
-            marginTop: '20px',
-            width: '300px', // Fixed width
-            height: '300px', // Fixed height
-            objectFit: 'cover', // Ensure the image covers the container
-            borderRadius: '8px',
-          }}
-        />
-      )}
 
       {loading && <CircularProgress size={24} color="inherit" />}
 
@@ -150,13 +201,7 @@ const App = () => {
         </div>
       )}
 
-      <video
-        ref={videoRef}
-        style={{ display: 'none' }}
-        autoPlay
-        playsInline
-        muted
-      ></video>
+      <video ref={videoRef} autoPlay playsInline muted></video>
     </Box>
   );
 };
